@@ -47,8 +47,9 @@ class AVL{
             return false;
         }
 
-
-
+        void printTree(){
+            printBT("", root, false);
+        }
 
         void changeDelete (bool deleteAll){
             deleteValues = deleteAll;
@@ -71,7 +72,7 @@ class AVL{
         
         bool deleteValues;
 
-        void deleteTree(Node & node){
+        void deleteTree(Node *& node){
             if(node == NULL) return;
             deleteTree(node -> left);
             deleteTree(node -> right);
@@ -90,15 +91,15 @@ class AVL{
             return true; // value equals node. Return true
         }
 
-        Node *  insert (Node * node , T * value){
+        Node *  insert (Node *& node , T * value){
             if(node == NULL) return new Node(value , NULL , NULL);
 
-            int compare (value , node -> val);
+            int compare = compareNodes(value , node -> val);
 
             if(compare == -1) {
-                return insert (node -> left , value);
+                node -> left = insert (node -> left , value);
             }else{
-                return insert (node -> right , value);
+                node -> right = insert (node -> right , value);
             }
 
             update (node);
@@ -113,14 +114,14 @@ class AVL{
 
         // if null, we put null so that they cancel out with the +1, and height can be zero if node has no subTrees.
         void update (Node * node){
-            int leftNodeHeight = (node -> left == NULL) ? : -1 , node -> left -> height; 
-            int rightNodeHeight = (node -> right == NULL) ? : -1 , node -> right -> height;
+            int leftNodeHeight = (node -> left == NULL) ?  -1 : node -> left -> height; 
+            int rightNodeHeight = (node -> right == NULL) ?  -1 : node -> right -> height;
 
             node -> height = 1 + max (leftNodeHeight , rightNodeHeight); // actual node's height
             node -> bf = rightNodeHeight - leftNodeHeight; // update balance factor
         }
 
-        Node * balance (Node * node) {
+        Node * balance (Node *& node) {
             if(node -> bf == -2){
 
                 if(node -> left != NULL && node -> left -> bf <= 0){    
@@ -143,26 +144,26 @@ class AVL{
         }
 
         // simple Rotations: 
-        Node * leftLeftCase (Node * node){
+        Node * leftLeftCase (Node *& node){
             return rightRotation (node);
         }
 
-        Node * rightRightCase (Node * node){
+        Node * rightRightCase (Node *& node){
             return leftRotation (node);
         }
 
         // complex Rotations: 
-        Node * leftRightCase (Node * node){
+        Node * leftRightCase (Node *& node){
             node -> left = leftRotation(node -> left);
             return leftLeftCase (node);
         }
        
-        Node * rightLeftCase (Node * node){
+        Node * rightLeftCase (Node *& node){
             node -> right = rightRotation(node -> right);
             return rightRightCase (node);
         }
 
-        Node * rightRotation (Node * node){
+        Node * rightRotation (Node *& node){
             Node * new_root = node -> left;
             node -> left = new_root -> right;
             new_root -> right = node;
@@ -171,7 +172,7 @@ class AVL{
             return new_root;
         }
 
-        Node * leftRotation (Node * node){
+        Node * leftRotation (Node *& node){
             Node * new_root = node -> right;
             node -> right = new_root -> left;
             new_root -> left = node;
@@ -180,14 +181,14 @@ class AVL{
             return new_root;
         }
 
-        Node * remove (Node * node , T * value){
-            if (node == NULL) return ;
+        Node * remove (Node *& node , T * value){
+            if (node == NULL) return NULL;
 
             int compare = compareNodes(value , node -> val);
             if(compare == -1 ){
-                 return remove (node -> left , value);
+                 node -> left = remove (node -> left , value);
             }else if (compare == 1){
-                return remove (node -> right , value);
+                node -> right = remove (node -> right , value);
             }else if (node -> right == NULL || node -> left == NULL){
                 Node * ret = node;
                 if(node -> left == NULL){
@@ -195,7 +196,7 @@ class AVL{
                 }else if (node -> right == NULL){
                     ret = node -> left;
                 }
-                if(deleteValues) delete node -> value;
+                if(deleteValues) delete node -> val;
                 delete node;
                 return ret;
             }else{
@@ -215,7 +216,7 @@ class AVL{
                 }
                 if(changeDelMethod) deleteValues = true;
             }
-            
+
             update (node);
             return balance (node);
         }
@@ -236,4 +237,47 @@ class AVL{
             return ret;
         }
 
+    void printBT(const std::string & prefix, const Node * node, bool isLeft){
+        if( node != NULL )
+        {
+            std::cout << prefix;
+
+            std::cout << (isLeft ? "├──" : "└──" );
+
+            // print the value of the node
+            std::cout << *(node->val) << std::endl;
+
+            // enter the next tree level - left and right branch
+            printBT( prefix + (isLeft ? "│   " : "    "), node->left, true);
+            printBT( prefix + (isLeft ? "│   " : "    "), node->right, false);
+        }
+    }
+
 };
+
+
+int compareInt(int * a , int * b){
+    if(*a == *b) return 0;
+    if(*a < *b) return -1;
+    return 1;
+}
+
+int main(){
+    AVL<int> * avl = new AVL<int> (compareInt);
+    for (int i = 0; i <= 15; i++){
+        int * ins = new int;
+        *ins = i;
+        avl -> insert(ins);
+    }
+    for (int i = 0; i <= 15; i++){
+        int * del = new int;
+        *del = i;
+        avl -> remove(del);
+        delete del;
+    }
+    avl -> printTree();
+    cout << "Is tree empty? : " << avl -> isEmpty() << endl;
+    delete avl;
+    
+    return 0;
+}
